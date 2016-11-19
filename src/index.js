@@ -19,7 +19,8 @@ module.exports = class DeployerJS {
           port: '21',
           username: '',
           password: '',
-          path: 'public_html/'
+          path: 'public_html/',
+          continueOnError: false
         },
         git: {
           repo: '',
@@ -184,7 +185,11 @@ module.exports = class DeployerJS {
     let fullRemotePath = path.join(this.state.config.ftp.path, val)
     this.state.ftp.put(fullLocalPath, fullRemotePath, (err) => {
       if (err) {
-        cb(err)
+        if (this.state.ftp.continueOnError) {
+          cb()
+        } else {
+          cb(err)
+        }
       } else {
         cb()
       }
