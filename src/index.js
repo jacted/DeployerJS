@@ -9,7 +9,7 @@ var async = require('async')
 var path = require('path')
 var fs = require('fs')
 
-class DeployerJS {
+module.exports = class DeployerJS {
 
   constructor (config) {
     this.state = {
@@ -81,16 +81,17 @@ class DeployerJS {
 
       // Get folder
       var folderHash = crypto.createHash('md5').update(cmd).digest('hex')
+      // cmd += ' ' + __dirname + '/gitdata/' + folderHash
       cmd += ' gitdata/' + folderHash
 
-      // Delte gitdata project folder
-      return rimraf(__dirname + '/gitdata/' + folderHash, (err) => {
+      // Delete gitdata project folder
+      return rimraf('gitdata/' + folderHash, (err) => {
         if (err) {
           reject(err)
         } else {
           exec(cmd)
-          this.state.localRoot = __dirname + '/gitdata/' + folderHash
-          resolve(__dirname + '/gitdata/' + folderHash)
+          this.state.localRoot = 'gitdata/' + folderHash
+          resolve('gitdata/' + folderHash)
         }
       })
     })
@@ -200,6 +201,7 @@ class DeployerJS {
           // Make directories if needed
           async.eachSeries(this.state.partialDirectories, this.ftpMakeDirectoriesIfNeeded.bind(this), (err) => {
             if (err) {
+              this.state.ftp.raw('quit')
               reject('Problem creating directories')
             } else {
               // Upload files
@@ -224,25 +226,4 @@ class DeployerJS {
     })
   }
 
-}
-
-
-try {
-  let deployer = new DeployerJS({
-    ftp: {
-      username: 'bob',
-      password: '1234'
-    },
-    git: {
-      repo: 'https://github.com/jacted/speed-monitor.git'
-    }
-  })
-
-  deployer.deployAllFiles().then((res) => {
-    console.log(res)
-  }, (err) => {
-    console.log(err)
-  })
-} catch (e) {
-  console.log(e)
 }
