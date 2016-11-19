@@ -81,7 +81,6 @@ module.exports = class DeployerJS {
 
       // Get folder
       var folderHash = crypto.createHash('md5').update(cmd).digest('hex')
-      // cmd += ' ' + __dirname + '/gitdata/' + folderHash
       cmd += ' gitdata/' + folderHash
 
       // Delete gitdata project folder
@@ -113,7 +112,8 @@ module.exports = class DeployerJS {
 
     // check if `startDir` is a valid location
     if (!fs.existsSync(startDir)) {
-      console.log(startDir + ' is not an existing location')
+      this.state.ftp.raw('quit')
+      throw new Error(startDir + ' is not a valid location')
     }
 
     // iterate throught the contents of the `startDir` location of the current iteration
