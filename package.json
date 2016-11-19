@@ -1,14 +1,22 @@
 {
   "name": "deployer-js",
   "version": "0.0.1",
-  "description": "",
+  "description": "NodeJS package for deploying GIT repos through FTP",
   "main": "index.js",
   "scripts": {},
   "author": "Jacob",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jacted/DeployerJS"
+  },
+  "bugs": {
+    "url": "https://github.com/jacted/DeployerJS/issues"
+  },
+  "homepage": "https://github.com/jacted/DeployerJS",
   "license": "MIT",
   "dependencies": {
     "async": "^2.1.2",
-    "jsftp": "^1.5.5",
+    "jsftp": "https://github.com/SEAPUNK/jsftp.git",
     "rimraf": "^2.5.4"
   }
 }
