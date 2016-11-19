@@ -171,33 +171,49 @@ class DeployerJS {
 
   deployAllFiles () {
 
-    // Clone git repo
-    let clonedRepoPath = this.cloneGitRepo()
+    return new Promise((resolve, reject) => {
 
-    clonedRepoPath.then((res) => {
+      // Clone git repo
+      let clonedRepoPath = this.cloneGitRepo()
 
-      // Parse dir
-      this.dirParseSync(res)
+      clonedRepoPath.then((res) => {
 
-      // Clean everything in this.state.config.ftp.path
-      this.cleanRemotePath().then(() => {
+        // Parse dir
+        this.dirParseSync(res)
 
-        // Make directories if needed
-        async.eachSeries(this.state.partialDirectories, this.ftpMakeDirectoriesIfNeeded.bind(this), (err) => {
-          
-          // Upload files
-          async.eachSeries(this.state.partialFilePaths, this.ftpUploadFiles.bind(this), (err) => {
-            this.state.ftp.raw('quit')
+        // Clean everything in this.state.config.ftp.path
+        this.cleanRemotePath().then(() => {
+
+          // Make directories if needed
+          async.eachSeries(this.state.partialDirectories, this.ftpMakeDirectoriesIfNeeded.bind(this), (err) => {
+
+            if (err) {
+              reject('Problem creating directories')
+            } else {
+              // Upload files
+              async.eachSeries(this.state.partialFilePaths, this.ftpUploadFiles.bind(this), (err) => {
+                this.state.ftp.raw('quit')
+                if (err) {
+                  reject('Could not upload files')
+                } else {
+                  resolve('Success')
+                }
+              })
+            }
+            
+            
           })
-          
+
+        }, (err) => {
+          this.state.ftp.raw('quit')
+          reject('Could not clean remote path')
         })
 
       }, (err) => {
         this.state.ftp.raw('quit')
+        reject('Could not clone git repo')
       })
 
-    }, (err) => {
-      this.state.ftp.raw('quit')
     })
 
   }
@@ -205,4 +221,8 @@ class DeployerJS {
 }
 
 var deployer = new DeployerJS()
-deployer.deployAllFiles()
+deployer.deployAllFiles().then((res) => {
+  console.log(res)
+}, (err) => {
+  console.log(err)
+})
