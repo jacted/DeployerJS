@@ -57,6 +57,7 @@ module.exports = class DeployerJS {
       host: this.state.config.ftp.host,
       port: this.state.config.ftp.port || 21
     })
+    this.state.ftp.useList = true
     this.state.ftp.auth(this.state.config.ftp.username, this.state.config.ftp.password, (err) => {
       if (err) {
         throw new Error('FTP could not connect')
@@ -162,7 +163,7 @@ module.exports = class DeployerJS {
   }
 
   ftpMakeDirectoriesIfNeeded (val, cb) {
-    let fullRemoteDirectory = this.state.config.ftp.path + '' + val
+    let fullRemoteDirectory = path.join(this.state.config.ftp.path, val)
     this.state.ftp.raw('cwd', fullRemoteDirectory, (err) => {
       if (err) {
         this.state.ftp.raw('mkd', fullRemoteDirectory, (err) => {
@@ -180,7 +181,7 @@ module.exports = class DeployerJS {
 
   ftpUploadFiles (val, cb) {
     let fullLocalPath = path.join(this.state.localRoot, val)
-    let fullRemotePath = this.state.config.ftp.path + '' + val
+    let fullRemotePath = path.join(this.state.config.ftp.path, val)
     this.state.ftp.put(fullLocalPath, fullRemotePath, (err) => {
       if (err) {
         cb(err)
