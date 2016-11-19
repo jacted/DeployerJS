@@ -11,18 +11,18 @@ var fs = require('fs')
 
 class DeployerJS {
 
-  constructor () {
+  constructor (config) {
     this.state = {
       config: {
         ftp: {
           host: 'localhost',
           port: '21',
-          username: 'bob',
-          password: '1234',
+          username: '',
+          password: '',
           path: 'public_html/'
         },
         git: {
-          repo: 'https://github.com/jacted/speed-monitor.git',
+          repo: '',
           branch: 'master'
         }
       },
@@ -31,7 +31,25 @@ class DeployerJS {
       partialFilePaths: [],
       partialDirectories: []
     }
-    this.configComlete()
+
+    // Merge FTP
+    Object.assign(this.state.config.ftp, config.ftp)
+    
+    // Merge GIT
+    Object.assign(this.state.config.git, config.git)
+
+    if (this.validateConfig()) {
+      this.configComlete()
+    } else {
+      throw new Error('Config is incorrect')
+    }
+  }
+
+  validateConfig () {
+    if (this.state.config.git.repo === '') {
+      return false
+    }
+    return true
   }
 
   configComlete () {
@@ -39,10 +57,9 @@ class DeployerJS {
       host: this.state.config.ftp.host,
       port: this.state.config.ftp.port || 21
     })
-
     this.state.ftp.auth(this.state.config.ftp.username, this.state.config.ftp.password, (err) => {
       if (err) {
-        console.log('Not connected')
+        throw new Error('FTP could not connect')
       } else {
         console.log('Connected')
       }
@@ -148,7 +165,11 @@ class DeployerJS {
     this.state.ftp.raw('cwd', fullRemoteDirectory, (err) => {
       if (err) {
         this.state.ftp.raw('mkd', fullRemoteDirectory, (err) => {
-          cb()
+          if (err) {
+            cb(err)
+          } else {
+            cb()
+          }
         })
       } else {
         cb()
@@ -159,7 +180,6 @@ class DeployerJS {
   ftpUploadFiles (val, cb) {
     let fullLocalPath = path.join(this.state.localRoot, val)
     let fullRemotePath = this.state.config.ftp.path + '' + val
-
     this.state.ftp.put(fullLocalPath, fullRemotePath, (err) => {
       if (err) {
         cb(err)
@@ -170,23 +190,15 @@ class DeployerJS {
   }
 
   deployAllFiles () {
-
     return new Promise((resolve, reject) => {
-
       // Clone git repo
-      let clonedRepoPath = this.cloneGitRepo()
-
-      clonedRepoPath.then((res) => {
-
+      this.cloneGitRepo().then((res) => {
         // Parse dir
         this.dirParseSync(res)
-
         // Clean everything in this.state.config.ftp.path
         this.cleanRemotePath().then(() => {
-
           // Make directories if needed
           async.eachSeries(this.state.partialDirectories, this.ftpMakeDirectoriesIfNeeded.bind(this), (err) => {
-
             if (err) {
               reject('Problem creating directories')
             } else {
@@ -200,29 +212,37 @@ class DeployerJS {
                 }
               })
             }
-            
-            
           })
-
         }, (err) => {
           this.state.ftp.raw('quit')
           reject('Could not clean remote path')
         })
-
       }, (err) => {
         this.state.ftp.raw('quit')
         reject('Could not clone git repo')
       })
-
     })
-
   }
 
 }
 
-var deployer = new DeployerJS()
-deployer.deployAllFiles().then((res) => {
-  console.log(res)
-}, (err) => {
-  console.log(err)
-})
+
+try {
+  let deployer = new DeployerJS({
+    ftp: {
+      username: 'bob',
+      password: '1234'
+    },
+    git: {
+      repo: 'https://github.com/jacted/speed-monitor.git'
+    }
+  })
+
+  deployer.deployAllFiles().then((res) => {
+    console.log(res)
+  }, (err) => {
+    console.log(err)
+  })
+} catch (e) {
+  console.log(e)
+}
