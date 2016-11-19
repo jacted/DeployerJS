@@ -1,12 +1,16 @@
 # DeployerJS (EXPERIMENTAL)
 
-This is an experiment.
+Ftp a git repo to a remote ftp destination.
 
-Using NodeJS to fetch GIT repo and upload through FTP.
+## Flow
+
+1. Clones git repo
+2. Parses git repo directory to get directories and files to create/upload
+3. Cleans all remote files
+4. Creates all directories on remote ftp
+5. Upload all files to remote ftp
 
 ## Todo
 
 - [ ] Add tests
-- [ ] Configurable options
-- [ ] Error handling
 - [ ] Git webhook integration
