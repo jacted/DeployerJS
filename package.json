@@ -1,0 +1,14 @@
+{
+  "name": "deployer-js",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Jacob",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.1.2",
+    "jsftp": "^1.5.5",
+    "rimraf": "^2.5.4"
+  }
+}
