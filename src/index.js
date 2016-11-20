@@ -72,6 +72,18 @@ module.exports = class DeployerJS {
     return Object.prototype.hasOwnProperty.call(obj, key)
   }
 
+  arrayUnique (array) {
+    var a = array.concat()
+    for(var i=0; i<a.length; ++i) {
+      for(var j=i+1; j<a.length; ++j) {
+        if(a[i] === a[j]) {
+          a.splice(j--, 1)
+        }
+      }
+    }
+    return a
+  }
+
   cloneGitRepo () {
     return new Promise((resolve, reject) => {
       let cmd = 'git clone ' + this.state.config.git.repo
@@ -138,8 +150,8 @@ module.exports = class DeployerJS {
         
         let tmpPath = path.relative(this.state.localRoot, startDir)
         if (!tmpPath.length) {
-					tmpPath = path.sep
-				}
+          tmpPath = path.sep
+        }
 
         let partialFilePath = path.join(tmpPath, files[i])
         if (this.canIncludeFile(partialFilePath)) {
@@ -225,6 +237,67 @@ module.exports = class DeployerJS {
           this.state.ftp.raw('quit')
           reject('Could not clean remote path')
         })
+      }, (err) => {
+        this.state.ftp.raw('quit')
+        reject('Could not clone git repo')
+      })
+    })
+  }
+
+  findCommitedFiles (commits) {
+    let upload = []
+    let removed = []
+    commits.forEach((val, index) => {
+      upload = upload.concat(val.added)
+      upload = upload.concat(val.modified)
+      removed = removed.concat(val.removed)
+    })  
+    return {
+      upload: this.arrayUnique(upload),
+      removed: this.arrayUnique(removed)
+    }
+  }
+
+  ftpRemoveFiles (val, cb) {
+    let fullRemotePath = path.join(this.state.config.ftp.path, val)
+    this.state.ftp.raw('dele', fullRemotePath, (err) => {
+      if (err) {
+        if (this.state.ftp.continueOnError) {
+          cb()
+        } else {
+          cb(err)
+        }
+      } else {
+        cb()
+      }
+    })
+  }
+
+  deployCommitedFiles (commits) {
+    return new Promise((resolve, reject) => {
+      // Clone git repo
+      this.cloneGitRepo().then((res) => {
+
+        // Find commited files
+        let commitedFiles = this.findCommitedFiles(commits)
+
+        // Delete files
+        async.eachSeries(commitedFiles.removed, this.ftpRemoveFiles.bind(this), (err) => {
+          if (err) {
+              this.state.ftp.raw('quit')
+              reject('Problem removing files')
+          } else {
+            async.eachSeries(commitedFiles.upload, this.ftpUploadFiles.bind(this), (err) => {
+              this.state.ftp.raw('quit')
+              if (err) {
+                reject('Could not upload files')
+              } else {
+                resolve('Success')
+              }
+            })
+          }
+        })
+
       }, (err) => {
         this.state.ftp.raw('quit')
         reject('Could not clone git repo')
