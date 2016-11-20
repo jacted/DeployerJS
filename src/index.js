@@ -273,6 +273,20 @@ module.exports = class DeployerJS {
     })
   }
 
+  makeFolderPathsFromCommits (files) {
+    let paths = []
+    files.forEach((filePath, index) => {
+      if (filePath === '/') {
+        return ['/']
+      }
+      const parts = filePath.split(/[\/\\]/)
+      parts.pop()
+      let finalPaths = parts.map((el, i) => parts.slice(0, parts.length - i).join('/').replace(/^$/, '/'))
+      paths = paths.concat(finalPaths)
+    })
+    return this.arrayUnique(paths)
+  }
+
   deployCommitedFiles (commits) {
     return new Promise((resolve, reject) => {
       // Clone git repo
@@ -281,21 +295,30 @@ module.exports = class DeployerJS {
         // Find commited files
         let commitedFiles = this.findCommitedFiles(commits)
 
-        // Delete files
-        async.eachSeries(commitedFiles.removed, this.ftpRemoveFiles.bind(this), (err) => {
-          if (err) {
+        // Create directores
+        let createFolderPaths = this.makeFolderPathsFromCommits(commitedFiles.upload)
+        async.eachSeries(createFolderPaths, this.ftpMakeDirectoriesIfNeeded.bind(this), (err) => {
+            if (err) {
               this.state.ftp.raw('quit')
-              reject('Problem removing files')
-          } else {
-            async.eachSeries(commitedFiles.upload, this.ftpUploadFiles.bind(this), (err) => {
-              this.state.ftp.raw('quit')
-              if (err) {
-                reject('Could not upload files')
-              } else {
-                resolve('Success')
-              }
-            })
-          }
+              reject('Problem creating directories')
+            } else {
+              // Delete files
+              async.eachSeries(commitedFiles.removed, this.ftpRemoveFiles.bind(this), (err) => {
+                if (err) {
+                    this.state.ftp.raw('quit')
+                    reject('Problem removing files')
+                } else {
+                  async.eachSeries(commitedFiles.upload, this.ftpUploadFiles.bind(this), (err) => {
+                    this.state.ftp.raw('quit')
+                    if (err) {
+                      reject('Could not upload files')
+                    } else {
+                      resolve('Success')
+                    }
+                  })
+                }
+              })
+            }
         })
 
       }, (err) => {
