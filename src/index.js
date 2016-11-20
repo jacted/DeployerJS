@@ -284,7 +284,11 @@ module.exports = class DeployerJS {
       let finalPaths = parts.map((el, i) => parts.slice(0, parts.length - i).join('/').replace(/^$/, '/'))
       paths = paths.concat(finalPaths)
     })
-    return this.arrayUnique(paths)
+    paths = this.arrayUnique(paths)
+    paths = paths.sort(function(a, b) {
+      return b.length - a.length
+    })
+    return paths
   }
 
   deployCommitedFiles (commits) {
