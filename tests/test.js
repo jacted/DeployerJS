@@ -22,7 +22,7 @@ try {
 
 // Test validate ftp
 validateFTP({
-  host: '',
+  host: '123',
   port: 21,
   username: 'bob',
   password: '1234'

@@ -15,7 +15,11 @@ function validateFTP (ftpData) {
       host: ftpData.host,
       port: ftpData.port || 21
     })
+    ftp.on('error', (err) => {
+      reject('FTP couldnt not connect')
+    })
     ftp.auth(ftpData.username, ftpData.password, (err) => {
+      ftp.raw('quit')
       if (err) {
         reject('FTP could not connect')
       } else {
