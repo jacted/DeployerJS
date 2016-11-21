@@ -1,4 +1,4 @@
-let DeployerJS = require('../src/index')
+let { DeployerJS, validateFTP } = require('../src/index')
 
 try {
   let deployer = new DeployerJS({
@@ -19,3 +19,15 @@ try {
 } catch (e) {
   console.log(e)
 }
+
+// Test validate ftp
+validateFTP({
+  host: '',
+  port: 21,
+  username: 'bob',
+  password: '1234'
+}).then((res) => {
+  console.log(res)
+}, (err) => {
+  console.log(err)
+})

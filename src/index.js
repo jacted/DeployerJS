@@ -9,7 +9,23 @@ var async = require('async')
 var path = require('path')
 var fs = require('fs')
 
-module.exports = class DeployerJS {
+function validateFTP (ftpData) {
+  return new Promise((resolve, reject) => {
+    let ftp = new Ftp({
+      host: ftpData.host,
+      port: ftpData.port || 21
+    })
+    ftp.auth(ftpData.username, ftpData.password, (err) => {
+      if (err) {
+        reject('FTP could not connect')
+      } else {
+        resolve('Connected')
+      }
+    })
+  })
+}
+
+class DeployerJS {
 
   constructor (config) {
     this.state = {
@@ -332,4 +348,9 @@ module.exports = class DeployerJS {
     })
   }
 
+}
+
+module.exports = {
+    DeployerJS: DeployerJS,
+    validateFTP: validateFTP
 }
