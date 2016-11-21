@@ -1,6 +1,6 @@
 {
   "name": "deployer-js",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "NodeJS package for deploying GIT repos through FTP",
   "main": "index.js",
   "scripts": {},
